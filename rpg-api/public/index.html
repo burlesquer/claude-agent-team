@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini RPG</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; }
+    header { background: #16213e; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f3460; }
+    header h1 { font-size: 1.4rem; color: #e94560; }
+    header .user-info { font-size: 0.9rem; color: #aaa; }
+    header .user-info span { color: #e94560; font-weight: bold; }
+    header button { background: #e94560; border: none; color: #fff; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+    .container { max-width: 960px; margin: 0 auto; padding: 20px; }
+    #auth-section { display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+    .auth-box { background: #16213e; padding: 32px; border-radius: 8px; width: 360px; }
+    .auth-box h2 { margin-bottom: 20px; color: #e94560; text-align: center; }
+    .auth-box input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #0f3460; border-radius: 4px; background: #1a1a2e; color: #eee; font-size: 0.95rem; }
+    .auth-box button { width: 100%; padding: 10px; background: #e94560; border: none; color: #fff; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: bold; }
+    .auth-box button:hover { background: #c73550; }
+    .auth-box .toggle { text-align: center; margin-top: 12px; color: #aaa; font-size: 0.85rem; }
+    .auth-box .toggle a { color: #e94560; cursor: pointer; text-decoration: underline; }
+    #game-section { display: none; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+    .tabs button { flex: 1; padding: 10px; background: #16213e; border: 2px solid #0f3460; color: #aaa; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+    .tabs button.active { background: #0f3460; color: #e94560; border-color: #e94560; font-weight: bold; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .card h3 { color: #e94560; margin-bottom: 8px; }
+    .card .stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.85rem; color: #aaa; }
+    .card .stats span { background: #1a1a2e; padding: 4px 8px; border-radius: 4px; }
+    .card .stats .hp { color: #4ecca3; }
+    .card .stats .atk { color: #e94560; }
+    .card .stats .def { color: #3498db; }
+    .form-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .form-row input, .form-row select { flex: 1; padding: 8px; background: #1a1a2e; border: 1px solid #0f3460; border-radius: 4px; color: #eee; }
+    .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
+    .btn-primary { background: #e94560; color: #fff; }
+    .btn-primary:hover { background: #c73550; }
+    .btn-success { background: #4ecca3; color: #1a1a2e; }
+    .btn-warning { background: #f0a500; color: #1a1a2e; }
+    .battle-log { background: #0d0d1a; border: 1px solid #0f3460; border-radius: 4px; padding: 12px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; line-height: 1.6; }
+    .battle-log .dmg { color: #e94560; }
+    .battle-log .heal { color: #4ecca3; }
+    .battle-log .info { color: #aaa; }
+    .battle-log .lvl { color: #f0a500; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #0f3460; font-size: 0.9rem; }
+    th { background: #0f3460; color: #e94560; }
+    tr:hover { background: #1e2a4a; }
+    .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; font-size: 0.9rem; z-index: 999; animation: fadeIn 0.3s; }
+    .toast.error { background: #e94560; color: #fff; }
+    .toast.success { background: #4ecca3; color: #1a1a2e; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .empty { text-align: center; color: #555; padding: 40px; font-size: 0.95rem; }
+    .class-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; }
+    .class-warrior { background: #e94560; color: #fff; }
+    .class-mage { background: #3498db; color: #fff; }
+    .class-rogue { background: #f0a500; color: #1a1a2e; }
+    .class-healer { background: #4ecca3; color: #1a1a2e; }
+  </style>
+</head>
+<body>
+
+<div id="auth-section">
+  <div class="auth-box">
+    <h2 id="auth-title">Login</h2>
+    <input type="text" id="auth-username" placeholder="Username">
+    <input type="password" id="auth-password" placeholder="Password">
+    <input type="email" id="auth-email" placeholder="Email (optional)" style="display:none;">
+    <button id="auth-btn" onclick="handleAuth()">Login</button>
+    <div class="toggle">
+      <span id="auth-toggle-text">No account?</span>
+      <a id="auth-toggle" onclick="toggleAuth()">Register</a>
+    </div>
+  </div>
+</div>
+
+<div id="game-section">
+  <header>
+    <h1>Mini RPG</h1>
+    <div class="user-info">
+      <span id="display-username"></span>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </header>
+  <div class="container">
+    <div class="tabs">
+      <button class="active" onclick="switchTab('characters')">Characters</button>
+      <button onclick="switchTab('battle')">Battle</button>
+      <button onclick="switchTab('items')">Items</button>
+      <button onclick="switchTab('leaderboard')">Leaderboard</button>
+    </div>
+
+    <div id="tab-characters" class="tab-content active">
+      <div class="card">
+        <h3>Create Character</h3>
+        <div class="form-row">
+          <input type="text" id="char-name" placeholder="Character name">
+          <select id="char-class">
+            <option value="warrior">Warrior</option>
+            <option value="mage">Mage</option>
+            <option value="rogue">Rogue</option>
+            <option value="healer">Healer</option>
+          </select>
+          <button class="btn btn-primary" onclick="createCharacter()">Create</button>
+        </div>
+      </div>
+      <h3 style="margin-bottom:12px;">My Characters</h3>
+      <div id="characters-list"></div>
+    </div>
+
+    <div id="tab-battle" class="tab-content">
+      <div class="card">
+        <h3>Attack</h3>
+        <div class="form-row">
+          <select id="battle-attacker"><option value="">-- My character --</option></select>
+          <span style="align-self:center;color:#e94560;font-size:1.2rem;">&#9876;</span>
+          <select id="battle-defender"><option value="">-- Target --</option></select>
+          <button class="btn btn-primary" onclick="attack()">Attack!</button>
+        </div>
+        <div class="form-row">
+          <select id="heal-char"><option value="">-- Heal character --</option></select>
+          <button class="btn btn-success" onclick="healChar()">Heal</button>
+        </div>
+      </div>
+      <h3 style="margin-bottom:12px;">Battle Log</h3>
+      <div id="battle-log" class="battle-log"></div>
+    </div>
+
+    <div id="tab-items" class="tab-content">
+      <div class="card">
+        <h3>Pick Up Item</h3>
+        <div class="form-row">
+          <select id="pickup-char"><option value="">-- Character --</option></select>
+          <select id="pickup-item"><option value="">-- Available item --</option></select>
+          <button class="btn btn-success" onclick="pickupItem()">Pick Up</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Trade Item</h3>
+        <div class="form-row">
+          <select id="trade-from"><option value="">-- From --</option></select>
+          <select id="trade-item"><option value="">-- Item --</option></select>
+          <select id="trade-to"><option value="">-- To --</option></select>
+          <button class="btn btn-warning" onclick="tradeItem()">Trade</button>
+        </div>
+      </div>
+      <h3 style="margin-bottom:12px;">Available Items</h3>
+      <div id="items-list"></div>
+    </div>
+
+    <div id="tab-leaderboard" class="tab-content">
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Class</th><th>Lv</th><th>W</th><th>L</th><th>Win%</th><th>Dmg Dealt</th></tr></thead>
+        <tbody id="leaderboard-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let token = localStorage.getItem('rpg_token');
+let username = localStorage.getItem('rpg_username');
+let isRegister = false;
+
+// Escape HTML to prevent XSS
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
+
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function toast(msg, type) {
+  type = type || 'success';
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function() { el.remove(); }, 3000);
+}
+
+function toggleAuth() {
+  isRegister = !isRegister;
+  document.getElementById('auth-title').textContent = isRegister ? 'Register' : 'Login';
+  document.getElementById('auth-btn').textContent = isRegister ? 'Register' : 'Login';
+  document.getElementById('auth-email').style.display = isRegister ? 'block' : 'none';
+  document.getElementById('auth-toggle-text').textContent = isRegister ? 'Have an account?' : 'No account?';
+  document.getElementById('auth-toggle').textContent = isRegister ? 'Login' : 'Register';
+}
+
+async function handleAuth() {
+  const u = document.getElementById('auth-username').value.trim();
+  const p = document.getElementById('auth-password').value.trim();
+  if (!u || !p) return toast('Fill in all fields', 'error');
+  try {
+    if (isRegister) {
+      const email = document.getElementById('auth-email').value.trim();
+      await api('POST', '/auth/register', { username: u, password: p, email: email });
+      toast('Registered! Logging in...');
+    }
+    const data = await api('POST', '/auth/login', { username: u, password: p });
+    token = data.token;
+    username = data.user.username;
+    localStorage.setItem('rpg_token', token);
+    localStorage.setItem('rpg_username', username);
+    showGame();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function logout() {
+  token = null; username = null;
+  localStorage.removeItem('rpg_token');
+  localStorage.removeItem('rpg_username');
+  document.getElementById('auth-section').style.display = 'flex';
+  document.getElementById('game-section').style.display = 'none';
+}
+
+function showGame() {
+  document.getElementById('auth-section').style.display = 'none';
+  document.getElementById('game-section').style.display = 'block';
+  document.getElementById('display-username').textContent = username;
+  loadCharacters();
+  loadItems();
+  loadLeaderboard();
+  loadBattleHistory();
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.tabs button').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelector('.tabs button[onclick="switchTab(\'' + name + '\')"]').classList.add('active');
+  if (name === 'leaderboard') loadLeaderboard();
+  if (name === 'items') loadItems();
+  if (name === 'characters') loadCharacters();
+  if (name === 'battle') { loadCharacters(); loadBattleHistory(); }
+}
+
+// --- Characters ---
+function renderCharCard(c) {
+  var card = document.createElement('div');
+  card.className = 'card';
+  var h3 = document.createElement('h3');
+  h3.textContent = c.name + ' ';
+  var badge = document.createElement('span');
+  badge.className = 'class-badge class-' + esc(c.characterClass);
+  badge.textContent = c.characterClass;
+  h3.appendChild(badge);
+  card.appendChild(h3);
+  var stats = document.createElement('div');
+  stats.className = 'stats';
+  var pairs = [
+    ['hp', 'HP: ' + c.hp + '/' + c.maxHp],
+    ['atk', 'ATK: ' + c.attack],
+    ['def', 'DEF: ' + c.defense],
+    ['', 'SPD: ' + c.speed],
+    ['lvl', 'Lv.' + c.level],
+    ['', 'EXP: ' + c.experience],
+    ['', 'Items: ' + (c.inventory ? c.inventory.length : 0)]
+  ];
+  pairs.forEach(function(p) {
+    var s = document.createElement('span');
+    if (p[0]) s.className = p[0];
+    s.textContent = p[1];
+    stats.appendChild(s);
+  });
+  card.appendChild(stats);
+  return card;
+}
+
+function updateSelect(id, chars) {
+  var sel = document.getElementById(id);
+  var val = sel.value;
+  sel.textContent = '';
+  var def = document.createElement('option');
+  def.value = '';
+  def.textContent = '-- Select --';
+  sel.appendChild(def);
+  chars.forEach(function(c) {
+    var opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name + ' (Lv.' + c.level + ')';
+    sel.appendChild(opt);
+  });
+  sel.value = val;
+}
+
+async function loadCharacters() {
+  try {
+    var data = await api('GET', '/characters');
+    var chars = data.characters || [];
+    var myChars = chars.filter(function(c) { return c.owner && c.owner.username === username; });
+    var list = document.getElementById('characters-list');
+    list.textContent = '';
+    if (myChars.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'No characters yet. Create one above!';
+      list.appendChild(empty);
+    } else {
+      myChars.forEach(function(c) { list.appendChild(renderCharCard(c)); });
+    }
+    updateSelect('battle-attacker', myChars);
+    updateSelect('heal-char', myChars);
+    updateSelect('pickup-char', myChars);
+    updateSelect('trade-from', myChars);
+    updateSelect('battle-defender', chars);
+    updateSelect('trade-to', chars);
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function createCharacter() {
+  var name = document.getElementById('char-name').value.trim();
+  var cls = document.getElementById('char-class').value;
+  if (!name) return toast('Enter a character name', 'error');
+  try {
+    await api('POST', '/characters', { name: name, characterClass: cls });
+    document.getElementById('char-name').value = '';
+    toast(name + ' created!');
+    loadCharacters();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// --- Battle ---
+function addBattleLogEntry(text, cls) {
+  var log = document.getElementById('battle-log');
+  var entry = document.createElement('div');
+  var span = document.createElement('span');
+  span.className = cls || 'info';
+  span.textContent = text;
+  entry.appendChild(span);
+  log.prepend(entry);
+}
+
+async function attack() {
+  var attackerId = document.getElementById('battle-attacker').value;
+  var defenderId = document.getElementById('battle-defender').value;
+  if (!attackerId || !defenderId) return toast('Select attacker and target', 'error');
+  try {
+    var data = await api('POST', '/battles/attack', { attackerId: attackerId, defenderId: defenderId });
+    var b = data.battle;
+    var dmgClass = b.damage < 0 ? 'heal' : 'dmg';
+    var text = data.attacker.name + ' -> ' + data.defender.name + ': ' + b.damage + ' dmg (HP: ' + data.defender.hp + ')';
+    if (b.defeated) text += ' DEFEATED!';
+    if (b.expGained) text += ' +' + b.expGained + ' EXP';
+    addBattleLogEntry(text, dmgClass);
+    loadCharacters();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function healChar() {
+  var id = document.getElementById('heal-char').value;
+  if (!id) return toast('Select a character', 'error');
+  try {
+    var data = await api('POST', '/battles/heal', { characterId: id });
+    toast(data.character.name + ' healed to ' + data.character.hp + ' HP');
+    loadCharacters();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function loadBattleHistory() {
+  try {
+    var data = await api('GET', '/battles/history');
+    var log = document.getElementById('battle-log');
+    log.textContent = '';
+    if (!data.battles || data.battles.length === 0) {
+      var info = document.createElement('div');
+      info.className = 'info';
+      info.textContent = 'No battles yet. Start fighting!';
+      log.appendChild(info);
+      return;
+    }
+    data.battles.reverse().slice(0, 50).forEach(function(b) {
+      var entry = document.createElement('div');
+      var span = document.createElement('span');
+      span.className = b.damage < 0 ? 'heal' : 'dmg';
+      span.textContent = 'Battle: ' + b.damage + ' dmg (HP left: ' + b.defenderHpRemaining + ')' + (b.defeated ? ' DEFEATED!' : '');
+      entry.appendChild(span);
+      log.appendChild(entry);
+    });
+  } catch (e) { /* ignore */ }
+}
+
+// --- Items ---
+async function loadItems() {
+  try {
+    var data = await api('GET', '/items');
+    var items = data.items || [];
+    var available = items.filter(function(i) { return i.owner === null; });
+    var list = document.getElementById('items-list');
+    list.textContent = '';
+    if (available.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'All items have been picked up';
+      list.appendChild(empty);
+    } else {
+      available.forEach(function(i) {
+        var card = document.createElement('div');
+        card.className = 'card';
+        var h3 = document.createElement('h3');
+        h3.textContent = i.name;
+        card.appendChild(h3);
+        var stats = document.createElement('div');
+        stats.className = 'stats';
+        var typeSpan = document.createElement('span');
+        typeSpan.textContent = i.type;
+        stats.appendChild(typeSpan);
+        if (i.attack) { var s = document.createElement('span'); s.className = 'atk'; s.textContent = 'ATK +' + i.attack; stats.appendChild(s); }
+        if (i.defense) { var s = document.createElement('span'); s.className = 'def'; s.textContent = 'DEF +' + i.defense; stats.appendChild(s); }
+        if (i.heal) { var s = document.createElement('span'); s.className = 'hp'; s.textContent = 'Heal +' + i.heal; stats.appendChild(s); }
+        card.appendChild(stats);
+        list.appendChild(card);
+      });
+    }
+    var sel = document.getElementById('pickup-item');
+    sel.textContent = '';
+    var def = document.createElement('option');
+    def.value = '';
+    def.textContent = '-- Select --';
+    sel.appendChild(def);
+    available.forEach(function(i) {
+      var opt = document.createElement('option');
+      opt.value = i.id;
+      opt.textContent = i.name;
+      sel.appendChild(opt);
+    });
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+document.getElementById('trade-from').addEventListener('change', async function() {
+  var charId = this.value;
+  var sel = document.getElementById('trade-item');
+  sel.textContent = '';
+  var def = document.createElement('option');
+  def.value = '';
+  def.textContent = '-- Select --';
+  sel.appendChild(def);
+  if (!charId) return;
+  try {
+    var data = await api('GET', '/items/inventory/' + charId);
+    (data.inventory || []).forEach(function(i) {
+      var opt = document.createElement('option');
+      opt.value = i.id;
+      opt.textContent = i.name;
+      sel.appendChild(opt);
+    });
+  } catch (e) { /* ignore */ }
+});
+
+async function pickupItem() {
+  var characterId = document.getElementById('pickup-char').value;
+  var itemId = document.getElementById('pickup-item').value;
+  if (!characterId || !itemId) return toast('Select character and item', 'error');
+  try {
+    var data = await api('POST', '/items/pickup', { characterId: characterId, itemId: itemId });
+    toast(data.item.name + ' picked up!');
+    loadItems();
+    loadCharacters();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function tradeItem() {
+  var fromCharacterId = document.getElementById('trade-from').value;
+  var itemId = document.getElementById('trade-item').value;
+  var toCharacterId = document.getElementById('trade-to').value;
+  if (!fromCharacterId || !itemId || !toCharacterId) return toast('Select all fields', 'error');
+  try {
+    var data = await api('POST', '/items/trade', { fromCharacterId: fromCharacterId, toCharacterId: toCharacterId, itemId: itemId });
+    toast('Traded ' + data.tradedItem.name + '!');
+    loadItems();
+    loadCharacters();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// --- Leaderboard ---
+async function loadLeaderboard() {
+  try {
+    var data = await api('GET', '/leaderboard');
+    var tbody = document.getElementById('leaderboard-body');
+    var entries = data.leaderboard || [];
+    tbody.textContent = '';
+    if (entries.length === 0) {
+      var tr = document.createElement('tr');
+      var td = document.createElement('td');
+      td.colSpan = 8;
+      td.style.textAlign = 'center';
+      td.style.color = '#555';
+      td.textContent = 'No data yet';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+    entries.forEach(function(e, i) {
+      var tr = document.createElement('tr');
+      var cells = [i + 1, e.name, e.characterClass, e.level, e.wins, e.losses, e.winRate + '%', e.totalDamageDealt];
+      cells.forEach(function(val, ci) {
+        var td = document.createElement('td');
+        if (ci === 2) {
+          var badge = document.createElement('span');
+          badge.className = 'class-badge class-' + esc(e.characterClass);
+          badge.textContent = val;
+          td.appendChild(badge);
+        } else {
+          td.textContent = val;
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+if (token && username) { showGame(); }
+</script>
+</body>
+</html>

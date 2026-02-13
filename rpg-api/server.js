@@ -10,8 +10,11 @@ const itemsRouter = require('./routes/items');
 const battlesRouter = require('./routes/battles');
 const leaderboardRouter = require('./routes/leaderboard');
 
+const path = require('path');
+
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // --- Auth Routes (no middleware needed) ---
 
