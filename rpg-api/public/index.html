@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mini RPG</title>
+  <title>가위바위보 도박장</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; }
     header { background: #16213e; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f3460; }
-    header h1 { font-size: 1.4rem; color: #e94560; }
-    header .user-info { font-size: 0.9rem; color: #aaa; }
-    header .user-info span { color: #e94560; font-weight: bold; }
+    header h1 { font-size: 1.3rem; color: #e94560; }
+    header .info { display: flex; align-items: center; gap: 16px; font-size: 0.9rem; }
+    header .coins { color: #f0a500; font-weight: bold; }
     header button { background: #e94560; border: none; color: #fff; padding: 6px 14px; border-radius: 4px; cursor: pointer; }
-    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
     #auth-section { display: flex; justify-content: center; align-items: center; min-height: 80vh; }
-    .auth-box { background: #16213e; padding: 32px; border-radius: 8px; width: 340px; }
+    .auth-box { background: #16213e; padding: 32px; border-radius: 8px; width: 320px; }
     .auth-box h2 { margin-bottom: 20px; color: #e94560; text-align: center; }
     .auth-box input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #0f3460; border-radius: 4px; background: #1a1a2e; color: #eee; }
     .auth-box button { width: 100%; padding: 10px; background: #e94560; border: none; color: #fff; border-radius: 4px; cursor: pointer; font-weight: bold; }
@@ -23,28 +23,33 @@
     .auth-box .toggle a { color: #e94560; cursor: pointer; text-decoration: underline; }
     #game-section { display: none; }
     .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
-    .tabs button { flex: 1; padding: 10px; background: #16213e; border: 2px solid #0f3460; color: #aaa; border-radius: 6px 6px 0 0; cursor: pointer; transition: all 0.2s; }
+    .tabs button { flex: 1; padding: 10px; background: #16213e; border: 2px solid #0f3460; color: #aaa; border-radius: 6px 6px 0 0; cursor: pointer; }
     .tabs button.active { background: #0f3460; color: #e94560; border-color: #e94560; font-weight: bold; }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
-    .card { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
-    .card h3 { color: #e94560; margin-bottom: 8px; }
-    .card .stats { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.85rem; color: #aaa; }
-    .card .stats span { background: #1a1a2e; padding: 4px 8px; border-radius: 4px; }
-    .card .stats .hp { color: #4ecca3; }
-    .card .stats .atk { color: #e94560; }
-    .card .stats .def { color: #3498db; }
-    .form-row { display: flex; gap: 8px; margin-bottom: 12px; }
-    .form-row input, .form-row select { flex: 1; padding: 8px; background: #1a1a2e; border: 1px solid #0f3460; border-radius: 4px; color: #eee; }
-    .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-    .btn-primary { background: #e94560; color: #fff; }
-    .btn-primary:hover { background: #c73550; }
-    .btn-success { background: #4ecca3; color: #1a1a2e; }
-    .btn-warning { background: #f0a500; color: #1a1a2e; }
-    .battle-log { background: #0d0d1a; border: 1px solid #0f3460; border-radius: 4px; padding: 12px; max-height: 250px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; line-height: 1.6; }
-    .battle-log .dmg { color: #e94560; }
-    .battle-log .heal { color: #4ecca3; }
-    .battle-log .info { color: #aaa; }
+    .card { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 20px; margin-bottom: 16px; text-align: center; }
+    .card h3 { color: #e94560; margin-bottom: 12px; }
+    .choices { display: flex; gap: 12px; justify-content: center; margin-bottom: 16px; }
+    .choices button { width: 80px; height: 80px; font-size: 2rem; border: 3px solid #0f3460; border-radius: 12px; background: #1a1a2e; cursor: pointer; transition: all 0.2s; }
+    .choices button:hover { border-color: #e94560; transform: scale(1.1); }
+    .choices button.selected { border-color: #e94560; background: #0f3460; }
+    .bet-row { display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 16px; }
+    .bet-row input { width: 120px; padding: 8px; background: #1a1a2e; border: 1px solid #0f3460; border-radius: 4px; color: #f0a500; text-align: center; font-size: 1.1rem; }
+    .bet-row span { color: #aaa; }
+    .btn-play { padding: 12px 40px; background: #e94560; border: none; color: #fff; border-radius: 6px; cursor: pointer; font-size: 1.1rem; font-weight: bold; }
+    .btn-play:hover { background: #c73550; }
+    .btn-play:disabled { background: #555; cursor: not-allowed; }
+    .result-box { background: #0d0d1a; border: 1px solid #0f3460; border-radius: 8px; padding: 20px; margin-top: 16px; text-align: center; display: none; }
+    .result-box .emoji { font-size: 3rem; }
+    .result-box .msg { font-size: 1.2rem; margin: 8px 0; }
+    .result-box .win { color: #4ecca3; }
+    .result-box .lose { color: #e94560; }
+    .result-box .draw { color: #f0a500; }
+    .history { max-height: 300px; overflow-y: auto; }
+    .history-item { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #0f3460; font-size: 0.85rem; }
+    .history-item .win { color: #4ecca3; }
+    .history-item .lose { color: #e94560; }
+    .history-item .draw { color: #f0a500; }
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 10px; text-align: left; border-bottom: 1px solid #0f3460; font-size: 0.9rem; }
     th { background: #0f3460; color: #e94560; }
@@ -52,13 +57,9 @@
     .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; font-size: 0.9rem; z-index: 999; animation: fadeIn 0.3s; }
     .toast.error { background: #e94560; color: #fff; }
     .toast.success { background: #4ecca3; color: #1a1a2e; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    .empty { text-align: center; color: #555; padding: 40px; }
-    .class-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; }
-    .class-warrior { background: #e94560; color: #fff; }
-    .class-mage { background: #3498db; color: #fff; }
-    .class-rogue { background: #f0a500; color: #1a1a2e; }
-    .class-healer { background: #4ecca3; color: #1a1a2e; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; } }
+    .empty { text-align: center; color: #555; padding: 30px; }
+    .streak { color: #f0a500; font-size: 0.85rem; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -68,106 +69,73 @@
     <h2 id="auth-title">로그인</h2>
     <input type="text" id="auth-username" placeholder="아이디">
     <input type="password" id="auth-password" placeholder="비밀번호">
-    <button id="auth-btn" onclick="handleAuth()">로그인</button>
+    <button onclick="handleAuth()" id="auth-btn">로그인</button>
     <div class="toggle">
       <span id="auth-toggle-text">계정이 없으신가요?</span>
-      <a id="auth-toggle" onclick="toggleAuth()">회원가입</a>
+      <a onclick="toggleAuth()" id="auth-toggle-link">회원가입</a>
     </div>
   </div>
 </div>
 
 <div id="game-section">
   <header>
-    <h1>Mini RPG</h1>
-    <div class="user-info">
-      <span id="display-username"></span>
+    <h1>가위바위보 도박장</h1>
+    <div class="info">
+      <span id="display-user"></span>
+      <span class="coins" id="display-coins"></span>
       <button onclick="logout()">로그아웃</button>
     </div>
   </header>
   <div class="container">
     <div class="tabs">
-      <button class="active" onclick="switchTab('characters')">캐릭터</button>
-      <button onclick="switchTab('battle')">전투</button>
-      <button onclick="switchTab('items')">아이템</button>
-      <button onclick="switchTab('leaderboard')">랭킹</button>
+      <button class="active" onclick="switchTab('play')">게임</button>
+      <button onclick="switchTab('history')">기록</button>
+      <button onclick="switchTab('ranking')">랭킹</button>
     </div>
 
-    <div id="tab-characters" class="tab-content active">
+    <div id="tab-play" class="tab-content active">
       <div class="card">
-        <h3>캐릭터 생성</h3>
-        <div class="form-row">
-          <input type="text" id="char-name" placeholder="캐릭터 이름">
-          <select id="char-class">
-            <option value="warrior">전사</option>
-            <option value="mage">마법사</option>
-            <option value="rogue">도적</option>
-            <option value="healer">힐러</option>
-          </select>
-          <button class="btn btn-primary" onclick="createCharacter()">생성</button>
+        <h3>선택하세요</h3>
+        <div class="choices">
+          <button onclick="selectChoice(this,'가위')" id="btn-scissors">&#9996;</button>
+          <button onclick="selectChoice(this,'바위')" id="btn-rock">&#9994;</button>
+          <button onclick="selectChoice(this,'보')" id="btn-paper">&#9995;</button>
         </div>
+        <div class="bet-row">
+          <span>베팅:</span>
+          <input type="number" id="bet-amount" value="100" min="1">
+          <span>코인</span>
+        </div>
+        <button class="btn-play" onclick="play()" id="btn-play" disabled>승부!</button>
+        <div class="streak" id="streak-display"></div>
       </div>
-      <h3 style="margin-bottom:12px;">내 캐릭터</h3>
-      <div id="characters-list"></div>
+      <div class="result-box" id="result-box">
+        <div class="emoji" id="result-emoji"></div>
+        <div class="msg" id="result-msg"></div>
+        <div id="result-detail"></div>
+      </div>
     </div>
 
-    <div id="tab-battle" class="tab-content">
-      <div class="card">
-        <h3>전투</h3>
-        <div class="form-row">
-          <select id="battle-attacker"><option value="">-- 내 캐릭터 --</option></select>
-          <span style="align-self:center;color:#e94560;font-size:1.2rem;">&#9876;</span>
-          <select id="battle-defender"><option value="">-- 상대 --</option></select>
-          <button class="btn btn-primary" onclick="attack()">공격!</button>
-        </div>
-        <div class="form-row">
-          <select id="heal-char"><option value="">-- 회복할 캐릭터 --</option></select>
-          <button class="btn btn-success" onclick="healChar()">회복</button>
-        </div>
-      </div>
-      <h3 style="margin-bottom:12px;">전투 기록</h3>
-      <div id="battle-log" class="battle-log"></div>
+    <div id="tab-history" class="tab-content">
+      <div class="history" id="history-list"></div>
     </div>
 
-    <div id="tab-items" class="tab-content">
-      <div class="card">
-        <h3>아이템 줍기</h3>
-        <div class="form-row">
-          <select id="pickup-char"><option value="">-- 캐릭터 --</option></select>
-          <select id="pickup-item"><option value="">-- 아이템 --</option></select>
-          <button class="btn btn-success" onclick="pickupItem()">줍기</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>아이템 거래</h3>
-        <div class="form-row">
-          <select id="trade-from"><option value="">-- 보내는 쪽 --</option></select>
-          <select id="trade-item"><option value="">-- 아이템 --</option></select>
-          <select id="trade-to"><option value="">-- 받는 쪽 --</option></select>
-          <button class="btn btn-warning" onclick="tradeItem()">거래</button>
-        </div>
-      </div>
-      <h3 style="margin-bottom:12px;">보유 가능한 아이템</h3>
-      <div id="items-list"></div>
-    </div>
-
-    <div id="tab-leaderboard" class="tab-content">
+    <div id="tab-ranking" class="tab-content">
       <table>
-        <thead><tr><th>#</th><th>이름</th><th>직업</th><th>Lv</th><th>승</th><th>패</th><th>승률</th><th>총 데미지</th></tr></thead>
-        <tbody id="leaderboard-body"></tbody>
+        <thead><tr><th>#</th><th>이름</th><th>코인</th><th>승</th><th>패</th><th>승률</th></tr></thead>
+        <tbody id="ranking-body"></tbody>
       </table>
     </div>
   </div>
 </div>
 
 <script>
-var CLASS_KR = { warrior: '전사', mage: '마법사', rogue: '도적', healer: '힐러' };
-var TYPE_KR = { weapon: '무기', armor: '방어구', consumable: '소비' };
 var API = '';
-var token = localStorage.getItem('rpg_token');
-var username = localStorage.getItem('rpg_username');
+var token = localStorage.getItem('rps_token');
+var username = localStorage.getItem('rps_username');
 var isRegister = false;
-
-function esc(str) { var d = document.createElement('div'); d.textContent = String(str); return d.innerHTML; }
+var selectedChoice = null;
+var CHOICE_EMOJI = { '가위': '\u2702\ufe0f', '바위': '\u270a', '보': '\u270b' };
 
 async function api(method, path, body) {
   var opts = { method: method, headers: { 'Content-Type': 'application/json' } };
@@ -192,7 +160,7 @@ function toggleAuth() {
   document.getElementById('auth-title').textContent = isRegister ? '회원가입' : '로그인';
   document.getElementById('auth-btn').textContent = isRegister ? '가입하기' : '로그인';
   document.getElementById('auth-toggle-text').textContent = isRegister ? '이미 계정이 있으신가요?' : '계정이 없으신가요?';
-  document.getElementById('auth-toggle').textContent = isRegister ? '로그인' : '회원가입';
+  document.getElementById('auth-toggle-link').textContent = isRegister ? '로그인' : '회원가입';
 }
 
 async function handleAuth() {
@@ -202,28 +170,37 @@ async function handleAuth() {
   try {
     if (isRegister) {
       await api('POST', '/auth/register', { username: u, password: p });
-      toast('가입 완료! 로그인 중...');
+      toast('가입 완료!');
     }
     var data = await api('POST', '/auth/login', { username: u, password: p });
     token = data.token; username = data.user.username;
-    localStorage.setItem('rpg_token', token);
-    localStorage.setItem('rpg_username', username);
+    localStorage.setItem('rps_token', token);
+    localStorage.setItem('rps_username', username);
     showGame();
   } catch (e) { toast(e.message, 'error'); }
 }
 
 function logout() {
   token = null; username = null;
-  localStorage.removeItem('rpg_token'); localStorage.removeItem('rpg_username');
+  localStorage.removeItem('rps_token'); localStorage.removeItem('rps_username');
   document.getElementById('auth-section').style.display = 'flex';
   document.getElementById('game-section').style.display = 'none';
 }
 
-function showGame() {
+async function showGame() {
   document.getElementById('auth-section').style.display = 'none';
   document.getElementById('game-section').style.display = 'block';
-  document.getElementById('display-username').textContent = username;
-  loadCharacters(); loadItems(); loadLeaderboard(); loadBattleHistory();
+  document.getElementById('display-user').textContent = username;
+  await refreshMe();
+}
+
+async function refreshMe() {
+  try {
+    var data = await api('GET', '/users/me');
+    document.getElementById('display-coins').textContent = data.coins + ' 코인';
+    var streak = data.winStreak > 0 ? data.winStreak + '연승 중!' : '';
+    document.getElementById('streak-display').textContent = streak;
+  } catch (e) { /* ignore */ }
 }
 
 function switchTab(name) {
@@ -231,215 +208,93 @@ function switchTab(name) {
   document.querySelectorAll('.tabs button').forEach(function(el) { el.classList.remove('active'); });
   document.getElementById('tab-' + name).classList.add('active');
   document.querySelector('.tabs button[onclick="switchTab(\'' + name + '\')"]').classList.add('active');
-  if (name === 'leaderboard') loadLeaderboard();
-  if (name === 'items') loadItems();
-  if (name === 'characters') loadCharacters();
-  if (name === 'battle') { loadCharacters(); loadBattleHistory(); }
+  if (name === 'history') loadHistory();
+  if (name === 'ranking') loadRanking();
 }
 
-function updateSelect(id, chars, placeholder) {
-  var sel = document.getElementById(id);
-  var val = sel.value;
-  sel.textContent = '';
-  var def = document.createElement('option');
-  def.value = ''; def.textContent = placeholder || '-- 선택 --';
-  sel.appendChild(def);
-  chars.forEach(function(c) {
-    var opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = c.name + ' (Lv.' + c.level + ')';
-    sel.appendChild(opt);
-  });
-  sel.value = val;
+function selectChoice(btn, choice) {
+  selectedChoice = choice;
+  document.querySelectorAll('.choices button').forEach(function(b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  document.getElementById('btn-play').disabled = false;
 }
 
-async function loadCharacters() {
+async function play() {
+  if (!selectedChoice) return;
+  var bet = parseInt(document.getElementById('bet-amount').value);
   try {
-    var data = await api('GET', '/characters');
-    var chars = data.characters || [];
-    var myChars = chars.filter(function(c) { return c.owner && c.owner.username === username; });
-    var list = document.getElementById('characters-list');
-    list.textContent = '';
-    if (myChars.length === 0) {
-      var empty = document.createElement('div');
-      empty.className = 'empty';
-      empty.textContent = '캐릭터가 없습니다. 위에서 생성하세요!';
-      list.appendChild(empty);
+    var data = await api('POST', '/game/play', { choice: selectedChoice, bet: bet });
+    var g = data.game;
+    var box = document.getElementById('result-box');
+    box.style.display = 'block';
+
+    var emoji = document.getElementById('result-emoji');
+    var msg = document.getElementById('result-msg');
+    var detail = document.getElementById('result-detail');
+
+    emoji.textContent = (CHOICE_EMOJI[g.choice] || '') + ' vs ' + (CHOICE_EMOJI[g.computerChoice] || '');
+
+    if (g.result === 'win') {
+      msg.className = 'msg win';
+      msg.textContent = '승리! +' + g.coinsChange + ' 코인';
+    } else if (g.result === 'lose') {
+      msg.className = 'msg lose';
+      msg.textContent = '패배! ' + g.coinsChange + ' 코인';
     } else {
-      myChars.forEach(function(c) {
-        var card = document.createElement('div'); card.className = 'card';
-        var h3 = document.createElement('h3'); h3.textContent = c.name + ' ';
-        var badge = document.createElement('span');
-        badge.className = 'class-badge class-' + esc(c.characterClass);
-        badge.textContent = CLASS_KR[c.characterClass] || c.characterClass;
-        h3.appendChild(badge); card.appendChild(h3);
-        var stats = document.createElement('div'); stats.className = 'stats';
-        [['hp','HP: '+c.hp+'/'+c.maxHp],['atk','공격: '+c.attack],['def','방어: '+c.defense],['','Lv.'+c.level],['','경험치: '+c.experience]].forEach(function(p) {
-          var s = document.createElement('span'); if(p[0]) s.className=p[0]; s.textContent=p[1]; stats.appendChild(s);
-        });
-        card.appendChild(stats); list.appendChild(card);
-      });
+      msg.className = 'msg draw';
+      msg.textContent = '무승부!';
     }
-    updateSelect('battle-attacker', myChars, '-- 내 캐릭터 --');
-    updateSelect('heal-char', myChars, '-- 회복할 캐릭터 --');
-    updateSelect('pickup-char', myChars, '-- 캐릭터 --');
-    updateSelect('trade-from', myChars, '-- 보내는 쪽 --');
-    updateSelect('battle-defender', chars, '-- 상대 --');
-    updateSelect('trade-to', chars, '-- 받는 쪽 --');
+    detail.textContent = '잔액: ' + g.coinsAfter + ' 코인';
+
+    document.getElementById('display-coins').textContent = g.coinsAfter + ' 코인';
+    await refreshMe();
+
+    // 선택 초기화
+    selectedChoice = null;
+    document.querySelectorAll('.choices button').forEach(function(b) { b.classList.remove('selected'); });
+    document.getElementById('btn-play').disabled = true;
   } catch (e) { toast(e.message, 'error'); }
 }
 
-async function createCharacter() {
-  var name = document.getElementById('char-name').value.trim();
-  var cls = document.getElementById('char-class').value;
-  if (!name) return toast('캐릭터 이름을 입력하세요', 'error');
+async function loadHistory() {
   try {
-    await api('POST', '/characters', { name: name, characterClass: cls });
-    document.getElementById('char-name').value = '';
-    toast(name + ' 생성 완료!');
-    loadCharacters();
-  } catch (e) { toast(e.message, 'error'); }
-}
-
-async function attack() {
-  var attackerId = document.getElementById('battle-attacker').value;
-  var defenderId = document.getElementById('battle-defender').value;
-  if (!attackerId || !defenderId) return toast('공격자와 대상을 선택하세요', 'error');
-  try {
-    var data = await api('POST', '/battles/attack', { attackerId: attackerId, defenderId: defenderId });
-    var b = data.battle;
-    var log = document.getElementById('battle-log');
-    var entry = document.createElement('div');
-    var span = document.createElement('span');
-    span.className = b.damage < 0 ? 'heal' : 'dmg';
-    var text = data.attacker.name + ' -> ' + data.defender.name + ': ' + b.damage + ' 데미지 (HP: ' + data.defender.hp + ')';
-    if (b.defeated) text += ' 처치!';
-    if (b.expGained) text += ' +' + b.expGained + ' 경험치';
-    span.textContent = text;
-    entry.appendChild(span);
-    log.prepend(entry);
-    loadCharacters();
-  } catch (e) { toast(e.message, 'error'); }
-}
-
-async function healChar() {
-  var id = document.getElementById('heal-char').value;
-  if (!id) return toast('캐릭터를 선택하세요', 'error');
-  try {
-    var data = await api('POST', '/battles/heal', { characterId: id });
-    toast(data.character.name + ' HP ' + data.character.hp + '으로 회복!');
-    loadCharacters();
-  } catch (e) { toast(e.message, 'error'); }
-}
-
-async function loadBattleHistory() {
-  try {
-    var data = await api('GET', '/battles/history');
-    var log = document.getElementById('battle-log');
-    log.textContent = '';
-    if (!data.battles || data.battles.length === 0) {
-      var info = document.createElement('div'); info.className = 'info';
-      info.textContent = '전투 기록이 없습니다.';
-      log.appendChild(info); return;
-    }
-    data.battles.reverse().slice(0, 30).forEach(function(b) {
-      var entry = document.createElement('div');
-      var span = document.createElement('span');
-      span.className = b.damage < 0 ? 'heal' : 'dmg';
-      span.textContent = b.damage + ' 데미지 (잔여 HP: ' + b.defenderHpRemaining + ')' + (b.defeated ? ' 처치!' : '');
-      entry.appendChild(span); log.appendChild(entry);
-    });
-  } catch (e) { /* ignore */ }
-}
-
-async function loadItems() {
-  try {
-    var data = await api('GET', '/items');
-    var items = data.items || [];
-    var available = items.filter(function(i) { return i.owner === null; });
-    var list = document.getElementById('items-list');
+    var data = await api('GET', '/game/history');
+    var list = document.getElementById('history-list');
     list.textContent = '';
-    if (available.length === 0) {
+    if (!data.history || data.history.length === 0) {
       var empty = document.createElement('div'); empty.className = 'empty';
-      empty.textContent = '모든 아이템이 수거되었습니다';
-      list.appendChild(empty);
-    } else {
-      available.forEach(function(i) {
-        var card = document.createElement('div'); card.className = 'card';
-        var h3 = document.createElement('h3'); h3.textContent = i.name; card.appendChild(h3);
-        var stats = document.createElement('div'); stats.className = 'stats';
-        var t = document.createElement('span'); t.textContent = TYPE_KR[i.type] || i.type; stats.appendChild(t);
-        if (i.attack) { var s = document.createElement('span'); s.className = 'atk'; s.textContent = '공격 +' + i.attack; stats.appendChild(s); }
-        if (i.defense) { var s = document.createElement('span'); s.className = 'def'; s.textContent = '방어 +' + i.defense; stats.appendChild(s); }
-        if (i.heal) { var s = document.createElement('span'); s.className = 'hp'; s.textContent = '회복 +' + i.heal; stats.appendChild(s); }
-        card.appendChild(stats); list.appendChild(card);
-      });
+      empty.textContent = '게임 기록이 없습니다';
+      list.appendChild(empty); return;
     }
-    var sel = document.getElementById('pickup-item');
-    sel.textContent = '';
-    var def = document.createElement('option'); def.value = ''; def.textContent = '-- 아이템 --'; sel.appendChild(def);
-    available.forEach(function(i) { var opt = document.createElement('option'); opt.value = i.id; opt.textContent = i.name; sel.appendChild(opt); });
+    data.history.forEach(function(g) {
+      var item = document.createElement('div'); item.className = 'history-item';
+      var left = document.createElement('span');
+      left.textContent = (CHOICE_EMOJI[g.choice]||g.choice) + ' vs ' + (CHOICE_EMOJI[g.computerChoice]||g.computerChoice);
+      var right = document.createElement('span');
+      right.className = g.result;
+      if (g.result === 'win') right.textContent = '승리 +' + g.coinsChange;
+      else if (g.result === 'lose') right.textContent = '패배 ' + g.coinsChange;
+      else right.textContent = '무승부';
+      item.appendChild(left); item.appendChild(right);
+      list.appendChild(item);
+    });
   } catch (e) { toast(e.message, 'error'); }
 }
 
-document.getElementById('trade-from').addEventListener('change', async function() {
-  var charId = this.value;
-  var sel = document.getElementById('trade-item');
-  sel.textContent = '';
-  var def = document.createElement('option'); def.value = ''; def.textContent = '-- 아이템 --'; sel.appendChild(def);
-  if (!charId) return;
+async function loadRanking() {
   try {
-    var data = await api('GET', '/items/inventory/' + charId);
-    (data.inventory || []).forEach(function(i) { var opt = document.createElement('option'); opt.value = i.id; opt.textContent = i.name; sel.appendChild(opt); });
-  } catch (e) { /* ignore */ }
-});
-
-async function pickupItem() {
-  var characterId = document.getElementById('pickup-char').value;
-  var itemId = document.getElementById('pickup-item').value;
-  if (!characterId || !itemId) return toast('캐릭터와 아이템을 선택하세요', 'error');
-  try {
-    var data = await api('POST', '/items/pickup', { characterId: characterId, itemId: itemId });
-    toast(data.item.name + ' 획득!');
-    loadItems(); loadCharacters();
-  } catch (e) { toast(e.message, 'error'); }
-}
-
-async function tradeItem() {
-  var from = document.getElementById('trade-from').value;
-  var itemId = document.getElementById('trade-item').value;
-  var to = document.getElementById('trade-to').value;
-  if (!from || !itemId || !to) return toast('모든 항목을 선택하세요', 'error');
-  try {
-    var data = await api('POST', '/items/trade', { fromCharacterId: from, toCharacterId: to, itemId: itemId });
-    toast(data.tradedItem.name + ' 거래 완료!');
-    loadItems(); loadCharacters();
-  } catch (e) { toast(e.message, 'error'); }
-}
-
-async function loadLeaderboard() {
-  try {
-    var data = await api('GET', '/leaderboard');
-    var tbody = document.getElementById('leaderboard-body');
-    var entries = data.leaderboard || [];
+    var data = await api('GET', '/ranking');
+    var tbody = document.getElementById('ranking-body');
     tbody.textContent = '';
-    if (entries.length === 0) {
+    if (!data.ranking || data.ranking.length === 0) {
       var tr = document.createElement('tr'); var td = document.createElement('td');
-      td.colSpan = 8; td.style.textAlign = 'center'; td.style.color = '#555';
+      td.colSpan = 6; td.style.textAlign = 'center'; td.style.color = '#555';
       td.textContent = '데이터 없음'; tr.appendChild(td); tbody.appendChild(tr); return;
     }
-    entries.forEach(function(e, i) {
+    data.ranking.forEach(function(u, i) {
       var tr = document.createElement('tr');
-      var cells = [i+1, e.name, e.characterClass, e.level, e.wins, e.losses, e.winRate+'%', e.totalDamageDealt];
-      cells.forEach(function(val, ci) {
-        var td = document.createElement('td');
-        if (ci === 2) {
-          var badge = document.createElement('span');
-          badge.className = 'class-badge class-' + esc(e.characterClass);
-          badge.textContent = CLASS_KR[val] || val;
-          td.appendChild(badge);
-        } else { td.textContent = val; }
-        tr.appendChild(td);
+      [i+1, u.username, u.coins, u.wins, u.losses, u.winRate+'%'].forEach(function(val) {
+        var td = document.createElement('td'); td.textContent = val; tr.appendChild(td);
       });
       tbody.appendChild(tr);
     });
