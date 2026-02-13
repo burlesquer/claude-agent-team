@@ -14,7 +14,8 @@
 - Node.js + Express
 - 인메모리 데이터 저장 (JSON 객체, DB 없이)
 - JWT 인증
-- TypeScript 없이 순수 JavaScript (버그 심기에 용이)
+- 순수 JavaScript
+- 단일 파일 웹 UI (HTML/CSS/JS)
 
 ### 프로젝트 구조
 
@@ -22,62 +23,43 @@
 rpg-api/
 ├── package.json
 ├── server.js              # Express 서버 진입점
+├── public/
+│   └── index.html         # 게임 웹 UI (단일 파일, dark theme)
 ├── middleware/
-│   └── auth.js            # JWT 인증 미들웨어 (🐛 버그 1)
+│   └── auth.js            # JWT 인증 미들웨어 (버그 1)
 ├── routes/
-│   ├── characters.js      # 캐릭터 CRUD (🐛 버그 2, 3)
-│   ├── items.js           # 아이템/인벤토리 (🐛 버그 4)
-│   ├── battles.js         # 전투 시스템 (🐛 버그 5, 6)
-│   └── leaderboard.js     # 리더보드 (🐛 버그 7)
+│   ├── characters.js      # 캐릭터 CRUD (버그 2, 3)
+│   ├── items.js           # 아이템/인벤토리 (버그 4)
+│   ├── battles.js         # 전투 시스템 (버그 5, 6)
+│   └── leaderboard.js     # 리더보드 (버그 7)
 ├── data/
 │   └── store.js           # 인메모리 데이터 저장소
 └── utils/
-    └── helpers.js         # 유틸리티 함수 (🐛 버그 8)
+    └── helpers.js         # 유틸리티 함수 (버그 8)
 ```
 
-### 숨길 버그 목록 (8개, 난이도별)
+### 웹 UI
+- 단일 HTML 파일, 빌드 도구 없음
+- 다크 테마 (게임 분위기)
+- 탭 기반: Characters, Battle, Items, Leaderboard
+- Login/Register 인증 화면
+- DOM API 기반 렌더링 (XSS 방지)
 
-#### 보안 취약점 (보안 전문가가 발견)
-1. **인증 우회** (`middleware/auth.js`)
-   - JWT 토큰 검증 시 `Bearer` 프리픽스를 대소문자 구분하여 비교
-   - `bearer` 또는 `BEARER`로 보내면 검증 건너뜀
-   - 난이도: ★★☆
+### 숨긴 버그 목록 (8개)
 
-2. **인젝션 취약점** (`routes/characters.js`)
-   - 캐릭터 이름 검색 시 정규식에 사용자 입력을 직접 사용 (ReDoS)
-   - `new RegExp(userInput)` 으로 직접 삽입
-   - 난이도: ★★★
+#### 보안 취약점
+1. **인증 우회** (`middleware/auth.js`) - Bearer 대소문자 구분 → jwt.decode 우회 (★★☆)
+2. **ReDoS** (`routes/characters.js`) - `new RegExp(userInput)` 직접 사용 (★★★)
+3. **민감 정보 노출** (`routes/characters.js`) - password_hash 필드 노출 (★☆☆)
 
-3. **민감 정보 노출** (`routes/characters.js`)
-   - 캐릭터 목록 조회 시 다른 유저의 `password_hash` 필드도 포함되어 반환
-   - 난이도: ★☆☆
+#### 로직 버그
+4. **인벤토리 복제** (`routes/items.js`) - 얕은 복사로 객체 참조 공유 (★★★)
+5. **음수 데미지** (`routes/battles.js`) - Math.max(0, damage) 누락 → HP 증가 (★★☆)
+6. **레벨업 오류** (`routes/battles.js`) - `>` 대신 `>=` 필요 (off-by-one) (★☆☆)
 
-#### 로직 버그 (포렌식 분석가가 발견)
-4. **인벤토리 복제 버그** (`routes/items.js`)
-   - 아이템 거래 시 객체 참조를 복사하여 두 유저가 같은 아이템 객체를 공유
-   - 한쪽이 수정하면 양쪽 다 변경됨 (얕은 복사 문제)
-   - 난이도: ★★★
-
-5. **전투 데미지 계산 오류** (`routes/battles.js`)
-   - 방어력이 공격력보다 높으면 음수 데미지 → HP가 오히려 증가
-   - `Math.max(0, damage)` 빠짐
-   - 난이도: ★★☆
-
-6. **레벨업 조건 오류** (`routes/battles.js`)
-   - 경험치 비교에 `>=` 대신 `>` 사용
-   - 정확히 필요 경험치에 도달하면 레벨업이 안 됨 (off-by-one)
-   - 난이도: ★☆☆
-
-#### 성능 이슈 (성능 프로파일러가 발견)
-7. **리더보드 O(n²)** (`routes/leaderboard.js`)
-   - 매 요청마다 전체 유저를 순회하며 전적을 계산하는 중첩 루프
-   - 캐싱 없이 매번 재계산
-   - 난이도: ★★☆
-
-8. **동기 파일 I/O** (`utils/helpers.js`)
-   - 로그 기록에 `fs.writeFileSync` 사용
-   - 모든 API 호출마다 블로킹 I/O 발생
-   - 난이도: ★☆☆
+#### 성능 이슈
+7. **O(n*m) 리더보드** (`routes/leaderboard.js`) - 캐싱 없는 중첩 루프 (★★☆)
+8. **동기 I/O** (`utils/helpers.js`) - fs.appendFileSync 블로킹 (★☆☆)
 
 ### API 엔드포인트
 
@@ -89,10 +71,13 @@ rpg-api/
 | POST | /characters | 캐릭터 생성 |
 | GET | /characters/search?name= | 캐릭터 검색 |
 | GET | /items | 아이템 목록 |
+| POST | /items/pickup | 아이템 줍기 |
 | POST | /items/trade | 아이템 거래 |
 | POST | /battles/attack | 전투 (공격) |
+| POST | /battles/heal | 캐릭터 힐 |
 | GET | /battles/history | 전투 기록 |
 | GET | /leaderboard | 리더보드 |
+| GET | /health | 서버 상태 |
 
 ---
 
@@ -106,125 +91,46 @@ rpg-api/
 
 | 역할 | 담당 | 사용할 에이전트 팀 기능 |
 |---|---|---|
-| **수사반장** (리더) | 조율 전용, 코드 안 만짐 | 위임 모드, 작업 할당 |
+| **수사반장** (리더) | 조율 전용 | 위임 모드, 작업 할당 |
 | **보안 전문가** | auth.js, 인젝션, 정보 노출 | 계획 승인, 직접 메시지 |
 | **포렌식 분석가** | 로직 버그 (items, battles) | 계획 승인, 가설 공유 |
 | **성능 프로파일러** | 성능 이슈 (leaderboard, helpers) | 자체 청구, 직접 메시지 |
-| **QA 수사관** | 버그 재현 테스트 작성 | 작업 종속성 (다른 팀원이 버그 찾은 후) |
+| **QA 수사관** | 버그 재현 테스트 작성 | 작업 종속성 |
 
-### 시나리오 흐름 (에이전트 팀 기능 매핑)
+### 시나리오 흐름
 
 ```
 Phase 1: 팀 생성 & 계획 수립
-─────────────────────────────
-[팀 생성]           → TeamCreate
-[위임 모드 전환]     → Shift+Tab (수사반장은 코드 안 만짐)
-[작업 목록 생성]     → 공유 작업 목록
-[작업 종속성 설정]   → QA 수사관은 다른 팀원의 발견에 의존
-[계획 승인 요구]     → 보안 전문가, 포렌식 분석가는 수사 계획 제출
+  → TeamCreate, 위임 모드, 작업 목록, 작업 종속성, 계획 승인
 
 Phase 2: 병렬 수사
-─────────────────────────────
-[계획 승인/거부]     → 수사반장이 계획 검토
-[병렬 작업]         → 보안/포렌식/성능이 동시에 수사
-[직접 메시지]       → 포렌식이 보안에게 "auth 우회로 아이템 복제 가능할 수도"
-[자체 청구]         → 성능 프로파일러가 추가 작업 자체 청구
+  → 계획 승인/거부, 병렬 작업, 직접 메시지, 자체 청구
 
 Phase 3: 단서 공유 & 토론
-─────────────────────────────
-[broadcast]         → 보안 전문가가 "치명적 인증 우회 발견!" 전체 알림
-[팀원 간 토론]      → 포렌식과 보안이 인증 우회 + 아이템 복제 연관성 토론
-[작업 차단 해제]    → 버그 발견 완료 → QA 수사관의 테스트 작성 작업 차단 해제
+  → broadcast, 팀원 간 토론, 작업 차단 해제
 
 Phase 4: 증거 수집 & 보고서
-─────────────────────────────
-[QA 테스트 작성]    → 발견된 버그를 재현하는 테스트 코드 작성
-[결과 종합]         → 수사반장이 모든 발견 사항을 수사 보고서로 종합
+  → QA 테스트 작성, 결과 종합
 
 Phase 5: 정리
-─────────────────────────────
-[팀원 종료]         → shutdown_request → 각 팀원 종료
-[팀 정리]           → TeamDelete
+  → shutdown_request, TeamDelete
 ```
 
-### 프롬프트 (한글)
-
-```
-RPG 게임 서버(rpg-api/)에서 심각한 이상 현상이 보고됐어.
-유저들이 무한 HP를 얻고, 아이템이 복제되고, 인증을 우회하는 사례가 속출해.
-탐정 팀을 구성해서 모든 문제를 찾아내고 수사 보고서를 작성해줘.
-
-에이전트 팀을 팀원 4명으로 만들어. 각 팀원은 Sonnet 모델을 사용해.
-
-- 보안 전문가: 인증, 인젝션, 정보 노출 등 보안 취약점을 수사해
-  - 담당 파일: middleware/auth.js, routes/characters.js (보안 관점)
-  - 수사 전에 반드시 수사 계획을 제출해서 승인받아야 해
-
-- 포렌식 분석가: 게임 로직 버그를 수사해 (아이템 복제, 전투 오류 등)
-  - 담당 파일: routes/items.js, routes/battles.js
-  - 수사 전에 반드시 수사 계획을 제출해서 승인받아야 해
-
-- 성능 프로파일러: 성능 병목 지점을 수사해
-  - 담당 파일: routes/leaderboard.js, utils/helpers.js
-  - 수사 계획 승인 없이 자유롭게 수사 가능
-
-- QA 수사관: 다른 팀원들이 발견한 버그를 재현하는 테스트 코드를 작성해
-  - 담당 파일: tests/ 디렉토리
-  - 다른 팀원들이 버그를 최소 3개 이상 발견한 후에 작업 시작해 (작업 종속성)
-
-수사 규칙:
-1. 나(수사반장)는 위임 모드로 운영해. 코드를 직접 보지 않고 조율만 할 거야.
-2. 보안 전문가와 포렌식 분석가는 수사 계획 승인이 필요해.
-   승인 기준: 조사할 파일과 의심되는 취약점 유형이 명시되어야 함.
-3. 팀원들은 서로 직접 메시지를 보내서 발견한 단서를 공유해야 해.
-   특히 보안 이슈와 로직 버그가 연관될 수 있으니 보안 전문가와
-   포렌식 분석가는 반드시 소통해야 해.
-4. 치명적인 취약점을 발견하면 broadcast로 전체 팀에 즉시 알려.
-5. QA 수사관은 다른 팀원들의 발견을 기다린 후 테스트를 작성해.
-6. 모든 수사가 끝나면 수사 보고서를 다음 형식으로 종합해줘:
-   - 발견된 문제 목록 (심각도 순)
-   - 각 문제의 영향 범위
-   - 재현 방법
-   - 권장 수정 방안
-
-수사를 시작해. 먼저 작업 목록을 만들고 팀원들에게 할당해줘.
-내가 위임 모드로 전환할 때까지 기다려.
-```
+자세한 시나리오 프롬프트와 관찰 포인트는 `agent-team-detective.md`를 참고하세요.
 
 ---
 
-## 구현 순서
+## 구현 완료 상태
 
-### Step 1: 프로젝트 초기화
-- `rpg-api/` 디렉토리 생성
-- `package.json` 생성 (express, jsonwebtoken 의존성)
-- `npm install` 실행
-
-### Step 2: 데이터 저장소 (`data/store.js`)
-- 인메모리 users, characters, items, battles 저장
-
-### Step 3: 인증 미들웨어 (`middleware/auth.js`)
-- JWT 검증 + **버그 1** (대소문자 구분 Bearer)
-
-### Step 4: 라우트 구현
-- `routes/characters.js` + **버그 2** (ReDoS) + **버그 3** (정보 노출)
-- `routes/items.js` + **버그 4** (얕은 복사)
-- `routes/battles.js` + **버그 5** (음수 데미지) + **버그 6** (off-by-one)
-- `routes/leaderboard.js` + **버그 7** (O(n²))
-
-### Step 5: 유틸리티 (`utils/helpers.js`)
-- 로그 함수 + **버그 8** (동기 I/O)
-
-### Step 6: 서버 진입점 (`server.js`)
-- Express 앱 구성, 라우트 연결
-
-### Step 7: 실습 가이드 작성
-- `agent-team-detective.md` 파일에 시나리오 프롬프트와 관찰 포인트 정리
-
----
-
-## 검증 결과
-
-- 서버 로드: 정상
-- 모든 API 엔드포인트: 동작 확인
-- 8개 버그 모두: 실제로 재현 가능 확인
+- [x] 프로젝트 초기화 (package.json, npm install)
+- [x] 데이터 저장소 (data/store.js)
+- [x] 인증 미들웨어 (middleware/auth.js + 버그 1)
+- [x] 캐릭터 라우트 (routes/characters.js + 버그 2, 3)
+- [x] 아이템 라우트 (routes/items.js + 버그 4)
+- [x] 전투 라우트 (routes/battles.js + 버그 5, 6)
+- [x] 리더보드 라우트 (routes/leaderboard.js + 버그 7)
+- [x] 유틸리티 (utils/helpers.js + 버그 8)
+- [x] 서버 진입점 (server.js)
+- [x] 웹 UI (public/index.html)
+- [x] 시나리오 가이드 (agent-team-detective.md)
+- [x] 8개 버그 모두 재현 가능 확인
